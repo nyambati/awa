@@ -2,14 +2,20 @@
 
 namespace App\Http\Controllers\Auth;
 
-use App\User;
+
+use Mail;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Foundation\Auth\RegistersUsers;
-use App\Mail\UserActivationEmail;
+use Illuminate\Http\Request;
+
+use App\User;
 use App\UserActivation;
+use App\Mail\UserActivationEmail;
 use App\Mail\UserWelcomeEmail;
+use App\Events\UserAccountActivated;
+use App\Events\UserRegistered;
 
 class RegisterController extends Controller
 {
@@ -81,7 +87,7 @@ class RegisterController extends Controller
             'token' => str_random(40)
         ]);
 
-        Mail::to($user->email)->send(new UserActivationMail($user));
+        event(new UserRegistered($user));
         return $user;
     }
 
@@ -103,8 +109,12 @@ class RegisterController extends Controller
 
         $activation->user->activated = 1;
         $activation->user->save();
+
+        //Delete activation user
+        UserActivation::where('user_id', $user->id)->first()->delete();
         // Send activation successful Email
-        Mail::to($user->email)->send(new UserWelcomeEmail($user));
+        event(new UserAccountActivated($user));
+
         return redirect('/login')
             ->with('status', "Your account has already been successfuly activated!.");
     }
