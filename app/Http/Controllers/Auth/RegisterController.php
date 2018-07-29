@@ -12,6 +12,7 @@ use Illuminate\Http\Request;
 
 use App\User;
 use App\UserActivation;
+use App\Profile;
 use App\Mail\UserActivationEmail;
 use App\Mail\UserWelcomeEmail;
 use App\Events\UserAccountActivated;
@@ -110,6 +111,10 @@ class RegisterController extends Controller
         $activation->user->activated = 1;
         $activation->user->save();
 
+        // Generate user profile and registration number
+        $accountNumber = $this->generateUserAccountNumber();
+        $profile = new Profile(['account_number' => $accountNumber]);
+        $activation->user->profile()->save($profile);
         //Delete activation user
         UserActivation::where('user_id', $user->id)->first()->delete();
         // Send activation successful Email
@@ -124,6 +129,11 @@ class RegisterController extends Controller
         $this->guard()->logout();
         return redirect('/login')
             ->with('status', 'Your account has been created successfully, check your email for the activation link');
+    }
+
+    protected function generateUserAccountNumber()
+    {
+        return 'AWA/' . mt_rand(10000000, 99999999) . '/' . strtoupper(str_random(3));
     }
 }
 
