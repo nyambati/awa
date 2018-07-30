@@ -34,7 +34,7 @@ class User extends Authenticatable
 
     function profile()
     {
-        return $this->hasOne('App\Profile');
+        return $this->hasOne(Profile::class);
     }
 
     function getNameAttribute()
